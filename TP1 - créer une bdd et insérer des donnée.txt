@@ -1,0 +1,85 @@
+--TP1 - créer la bdd et insérer les données présentées ci-dessus
+
+
+-- ⦁	Utiliser la commande DESC pour donner la structure de la table fournisseurs  
+ select * from fournisseurs
+ order by nom desc;
+
+
+-- ⦁	Ajouter une colonne prénom  dans la table Fournisseurs et vérifier avec DESC 
+ alter table fournisseurs 
+ add column (prenom VARCHAR(50));
+ select * from fournisseurs;
+
+
+-- ⦁	Changer la couleur du produit n° 102  en noir  ( vérifier avec un select )
+ update bdcommandes.produits 
+ set couleur = 'noir'
+ where pno='102';
+select * from bdcommandes.produits ;
+
+
+--⦁ 	Supprimer la commande numéro 1005 ( expliquer le résultat )
+delete from bdcommandes.commandes
+where cno='1005';
+-- la suppression a marché, pas d'erreur à priori
+select * from bdcommandes.commandes;
+
+
+--⦁ 	 Supprimer la table Fournisseurs 
+-- on ne peut pas faire la commande : drop table fournisseurs;  car
+--la table est lié par une clé étrangère à une autre table, en l'occurrence la table commandes
+
+
+--⦁ 	Renommer les tables produits, fournisseurs par respectivement P et F 
+alter table fournisseurs rename to F;
+alter table produits rename to P;
+
+
+-- ⦁    Ajouter une colonne « Tel» de type VARCHAR(10) dans la table fournisseurs , puis vérifier cette modification en affichant la structure de la table avec la commande DESC 
+alter table fournisseurs 
+add column tel VARCHAR(10);
+--vérification:
+desc fournisseurs;
+
+
+-- ⦁	Modifier le type de la colonne prix  par decimal(4,2) ( essayer également avec décimal (6,2) expliquer ) vérifier cette modification avec DSEC
+alter table produits modify column prix DECIMAL(4.2);
+--verification:
+desc produits;
+-- decimal(6.2)
+alter table produits modify column prix decimal(6.2);
+--verification:
+desc produits;
+
+
+--⦁ 	ajouter la contrainte suivante  dans le schéma  relationnel « le poids du produit doit être entre 5 et 50 » , vérifier  en effectuant une saisie qui respecte la contrainte puis avec une autre saisie qui ne respecte pas ( commande INSERT INTO ) 
+alter table produits add CONSTRAINT contrainte_poids CHECK(poids between 5 and 50);
+--Pour vérifier si la contrainte est respectée, on peut faire un INSERT INTO avec des valeurs qui respectent la contrainte :
+insert into produits (poids)
+values (10);
+--verification:
+desc produits;
+-- maintenant, un insert into dont les valeurs ne respectent pas la contrainte de poids:
+insert into produits(poids)
+values (1);
+-- affiche l'erreur lié à la contrainte :
+--12:38:15	insert into produits(poids) values (1)	Error Code: 3819. Check constraint 'contrainte_poids' is violated.	0.000 sec
+--la contrainte a marché!
+
+
+-- ⦁	ajouter une contrainte  suivante dans le schéma relationnel «  le prix doit être supérieur à 100 », vérifier  en effectuant une saisie qui respecte la contrainte puis avec une autre saisie qui ne respecte pas ( commande INSERT INTO )
+alter table produits add constraint contrainte_prix check(prix >100);
+-- verification : insert into avec valeurs qui respectent la contrainte 
+insert into produits (prix)
+values (101);
+
+
+--⦁	ajouter une contrainte suivante dans le schéma relationnel « design doit être soit fauteuil, bureau, armoire, caisson, classeur », vérifier  en effectuant une saisie qui respecte la contrainte puis avec une autre saisie qui ne respecte pas (commande INSERT INTO )
+alter table produits add constraint contrainte_design check(design IN ('fauteuil', 'bureau', 'armoire', 'caisson', 'classeur') );
+--verification: insert into avec valeur qui respectent la contrainte
+insert into produits (design)
+values('fauteuil', 'armoire', 'bureau');
+--verification: insert into avec des valeurs qui ne respectent pas la contrainte 
+insert into produits(design)
+values('test', 'contrainte','design');

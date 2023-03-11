@@ -1,0 +1,188 @@
+-- TP3 : JACQUES ET ROSSINDJI
+
+-- rappel :
+--Rappel 
+--Trasaction sur workbench 
+--Pour cette partie, vous pouvez utiliser votre serveur MySQL local et MySQL Workbench comme client. Afin d'avoir un contrôle total sur vos transactions, vous devez désactiver la validation automatique à chaque fois que vous ouvrez une nouvelle connexion1 à votre base de données. Pour ce faire, cliquez sur l'icône «Activer/désactiver le mode autocommit». 
+
+
+
+
+
+-- 1 désactiver l'autocommit en premier lieu
+set autocommit=0; 
+-- à retaper pour chaque table...
+--À partir de ce moment, les transactions seront gérées par START TRANSACTION, COMMIT ou ROLLBACK que vous émettez ou en cliquant sur les icônes «COMMIT»/«ROLLBACK». 
+--Notez que pour que les transactions fonctionnent correctement sous MySQL, vos tables doivent utiliser le moteur de stockage InnoDB: assurez-vous que toutes vos tables de la base de données Ecole sont en InnoDB. 
+
+--Pour ouvrir deux connexions distinctes à votre base de données, (que les connexions soient ouvertes pour le compte d'utilisateurs distincts ou pour le compte du même utilisateur n'a pas d'importance.) Pour ce faire, ouvrez deux connexions sous la même instance MySQL Workbench: cela créera deux onglets principaux dans la fenêtre du workbench, 
+--un pour chaque connexion. Notez que tous les onglets de requête de n'importe quel onglet principal se rapportent à la même connexion et partagent donc le même environnement de transaction. 
+
+
+
+
+
+-- 1. COMMIT ET ROLLBACK:
+--Vous ne devez utiliser qu'une seule connexion dans cet exercice. Après avoir désactivé l'autocommit, démarrez une nouvelle transaction. Insérez ensuite un nouveau produit dans la table PRODUITS. Vérifiez que le nouvel produit est visible par la transaction en cours en émettant une instruction Select. Ensuite, exécuter une commande Rollback, puis une nouvelle instruction Select. 
+-- démarage d'une nouvelle transaction :
+start transaction; 
+--Insérez ensuite un nouveau produit dans la table PRODUITS.
+insert into produits (pno, design, prix, poids, couleur ) values (999, 'fauteuil', '120', '35', 'jaune');
+--Vérifiez que le nouvel produit est visible par la transaction en cours en émettant une instruction Select.
+select * from produits;
+-- le nouveau produits est bien visible dans la table produits
+--Ensuite, exécuter une commande Rollback, puis une nouvelle instruction Select. 
+ROLLBACK;
+select * from produits;
+-- le rollback a bien annulé la dernière transaction ! le nouveau produit n'est plus visible 
+--Répétez cette expérience en exécutant la commande Commit à la place de la commande Rollback. Qu'observez-vous ? 
+insert into produits (pno, design, prix, poids, couleur ) values (999, 'fauteuil', '120', '35', 'jaune');
+commit; 
+SELECT* from produits; 
+
+
+
+
+
+-- 2. TRANSACTION ET REPRISE SUR PANNE :
+--Comme dans la question précédente, démarrez une nouvelle transaction et insérez un nouveau produit dans la table PRODUITS. 
+start transaction;
+insert into produits (pno, design, prix, poids, couleur ) values (666, 'chaise', '150', '25', 'rouge');
+select* from produits; --pour voir l'ajout
+--à noter qu'ici, il n'ya pas de commit à la fin pour valider la TRANSACTION.
+-- s'il n'y a pas de commit, il n'y a pas de transaction (requetes)
+--Fermez ensuite l'onglet de connexion. Puis, lancez à nouveau MySQL Workbench et vérifiez si le produit que vous venez d'insérer est dans la table PRODUITS. 
+select* from produits; --pour voir l'ajout
+-- non, après la fermeture de l'onglet connexion : le produit 'chaise' inséré n'est plus dans la table produits. 
+
+-- nouveau test : cette fois avec un commit à la fin pour valider la transaction :
+start transaction;
+insert into produits (pno, design, prix, poids, couleur ) values (666, 'chaise', '150', '25', 'rouge');
+COMMIT; -- commit ici pour valider l'insert
+select* from produits; --pour voir l'ajout
+-- resultat après fermeture de l'onglet : le produit 'chaise' est là, cette fois-ci!!
+
+--conclusion : le commit sert bien à valider une requete si on start une transaction! 
+-- meme si on ferme brusquement le programme, tant que le commit est validé, la TRANSACTION sera sauvegardé et validé!
+
+
+
+
+
+
+-- 3. NIVEAU D'ISOLATION DES TRANSACTIONS :
+--Déterminez le niveau d'isolation des transactions par défaut de votre base de données en exécutant la commande suivante : 
+ show variables like '%isolation%'; 
+-- affiche : 
+--TRANSACTION_ISOLATION : REPEATABLE-READ 
+
+--Ensuite, concevez l'expérience le plus simple possible qui démontre que par défaut, les modifications effectuées dans une transaction sur la base de données ne sont visibles que par cette transaction.
+
+-- test1 : sans le commit
+start transaction; -- niveau d'isolation de base : REPEATABLE-READ 
+insert into produits (pno, design, prix, poids, couleur ) values (333, 'test', '111', '19', 'violet');
+select* from produits; -- voir dans un premier temps l'ajout de l'insert into
+-- on ne fait pas le commit pour que les modifications ne soient pas validées
+-- fermer l'onglet de la connexion, puis se reconnecter, on devrait voir la valeur antérieure, car les modifications ne sont pas encore validées et ne sont donc pas visibles pour les autres transactions.
+
+-- test2 : avec le commit 
+start transaction; -- niveau d'isolation de base : REPEATABLE-READ 
+insert into produits (pno, design, prix, poids, couleur ) values (333, 'test', '111', '19', 'violet');
+commit;
+select* from produits; -- voir dans un premier temps l'ajout de l'insert into
+--fermer le programme !
+--Cette fois-ci, on devrait ppouvoir voir la nouvelle valeur, car la transaction a été validée et les modifications sont maintenant visibles pour les autres transactions.
+--Ceci montre que les modifications effectuées dans une transaction ne sont visibles que pour cette transaction tant qu'elle n'a pas été validée.
+
+--Puis, considérons par exemple l'insertion d'un nouveau produit dans la table PRODUITS. Répétez l'expérience en supprimant le produit que vous venez d'insérer. 
+--il faut juste refaire le test1 et test2 mais cette fois-ci en supprimant l'insertion d'un new produit 
+
+
+
+
+
+
+
+-- 4. NIVEAU D'ISOLATION : read uncommited
+--Répétez ensuite l'expérience précédente et définissez le niveau d'isolation des transactions sur read uncommitted en émettant l'instruction correspondante. Cela définira le niveau d'isolation de toutes les transactions à venir. 
+ show variables like '%isolation%';
+
+-- pour changer le niveau d'isolation, à taper dans la table dans laquelle on souhaite changer le lvl d'isolation
+SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
+--Cependant, il est important de comprendre que le niveau d'isolation READ UNCOMMITTED signifie que les transactions peuvent lire des données qui ne sont pas encore validées par d'autres transactions. Cela peut entraîner des données incohérentes et peut être très problématique pour la fiabilité des données. 
+--Il est généralement recommandé d'utiliser un niveau d'isolation plus élevé tel que READ COMMITTED ou SERIALIZABLE pour éviter ce genre de problèmes.
+
+--répéter l'experience précédente :
+-- test1 : sans le commit
+insert into produits (pno, design, prix, poids, couleur ) values (1200, 'test', '111', '19', 'violet');
+select* from produits; -- voir dans un premier temps l'ajout de l'insert into
+-- fermer l'onglet, puis se reconnecter
+--normalement, comme on a set le niv d'isolation à READ-UNCOMMITED, on devrait pouvoir lire la nouvelle valeur malgré qu'on n'ait pas validé la transaction avec un commit!
+
+-- test2 : avec le commit 
+insert into produits (pno, design, prix, poids, couleur ) values (333, 'test', '111', '19', 'violet');
+commit;
+select* from produits; -- voir dans un premier temps l'ajout de l'insert into 
+-- fermer la connexion, puis se reconnecter
+-- comme l'isolation est en READ-UNCOMMITTED, meme si on met ou qu'on ne met pas le commit pour valider la transaction
+--les modifications serant quand meme visibles pour les autres transactions (requêtes)
+
+-- on doit donc remodifier la transaction qui est en "READ-UNCOMMITTED" par "READ-COMMITTED" pour changer le comportement 
+
+-- conclusion : en niveau READ-UNCOMMITTED, le comit n'est pass nécéssaire du tout, on peut éffectuer des modif qui seront quand meme validé. Meme après la une fermeture brusque, les modfis seront quand meme sauvegardées
+-- tandis qu'en "READ-COMMITTED" , sans la validation par le commit, si l'on ferme le programme les modifs ne seront plus visible aux autres transcations!
+
+
+
+
+
+
+
+-- 5. Niveaux d'isolation : SERIALIZABLE
+--Répétez cette fois l'expérience précédente en utilisant le niveau d'isolation sérialisable.
+start transaction; 
+set session transaction isolation LEVEL SERIALIZABLE; 
+--Le niveau d'isolation SERIALIZABLE est le niveau d'isolation le plus élevé pour les transactions dans SQL. Il garantit que les transactions sont exécutées dans un ordre séquentiel qui serait le même si elles étaient exécutées une par une, ce qui est équivalent à une séquence de transactions exécutées en mode verrouillage série.
+--Cela signifie que si deux transactions accèdent aux mêmes données en même temps, l'une d'entre elles est mise en attente jusqu'à ce que l'autre soit terminée. De cette façon, le niveau d'isolation SERIALIZABLE empêche les erreurs de lecture fantômes, les erreurs de lecture non répétées et les erreurs de phantome.
+--En d'autres termes, le niveau d'isolation SERIALIZABLE garantit que les transactions sont exécutées de manière totalement isolée les unes des autres, ce qui peut aider à prévenir les erreurs de données et les incohérences dans les données. Cependant, cela peut également ralentir les performances de la base de données car les transactions peuvent être mises en attente les unes des autres, ce qui peut entraîner des blocages. Il est donc important de choisir le niveau d'isolation approprié en fonction des besoins de votre application.
+
+--répéter l'experience précédente :
+
+-- TRANSACTION1 : avec SERIALIZABLE
+update produits
+set design = 'serializable1',
+	prix = 300,
+    poids = 34,
+	couleur = 'example1'
+where pno = 1800; 
+
+update produits
+set design = 'serializable2',
+	prix = 300,
+    poids = 34,
+	couleur = 'example2'
+where pno = 1800; 
+
+select* FROM produits;
+-- avec un niveau d'isolation SERIALIZABLE, l'une des deux transactions est mise en attente jusqu'à ce que l'autre soit terminée. 
+--De cette façon, aucune des deux transactions ne peut lire des données qui ont été modifiées par une autre transaction. Cela empêche les erreurs de lecture fantômes et garantit la cohérence des données.
+
+
+-- TRANSACTION2 : SANS serializable
+set session transaction isolation LEVEL READ-COMMITTED; 
+update produits
+set design = 'serializable1',
+	prix = 300,
+    poids = 34,
+	couleur = 'example1'
+where pno = 1800; 
+
+update produits
+set design = 'serializable2',
+	prix = 300,
+    poids = 34,
+	couleur = 'example2'
+where pno = 1800; 
+select* FROM produits;
+
+--Avec un niveau d'isolation READ COMMITTED, la Transaction 2 pourrait lire le pno 1800 avant que la Transaction 1 ne le modifie. Ca pourrait entraîner une erreur de lecture fantôme.

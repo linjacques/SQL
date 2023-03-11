@@ -1,0 +1,116 @@
+-- TP1 - VUES en mysql
+
+
+-- Proposer  3 vues  pour la table de commandes   Grosses-Commande (Q> 10), petites-commandes (Q < 5) et moyennes-commande (entre 5 et 10 ) 
+CREATE VIEW GrossesCommandes AS
+SELECT *
+FROM Commandes
+WHERE qute > 10;
+
+CREATE VIEW PetitesCommandes AS
+SELECT *
+FROM Commandes
+WHERE qute < 5;
+
+CREATE VIEW MoyennesCommandes AS
+SELECT *
+FROM Commandes
+WHERE qute >= 5 AND qute <= 10;
+
+-- Proposer 3 vues pour la table fournisseurs   ( Ceux de paris , de lille et de Lyon )
+CREATE VIEW Fournisseurs_Paris AS
+SELECT * FROM Fournisseurs
+WHERE Ville = 'Paris';
+
+CREATE VIEW Fournisseurs_Lille AS
+SELECT * FROM Fournisseurs
+WHERE Ville = 'Lille';
+
+CREATE VIEW Fournisseurs_Lyon AS
+SELECT * FROM Fournisseurs
+WHERE Ville = 'Lyon';
+
+-- Proposer 3 vues pour la table produits ( Produits-lourd  > 20 Kg, Produits-leger <10 Kg , produits-chers > 2000 euros
+CREATE VIEW produits_lourds AS 
+SELECT * 
+FROM produits 
+WHERE poids > 20;
+
+CREATE VIEW produits_legers AS 
+SELECT * 
+FROM produits 
+WHERE poids < 10;
+
+CREATE VIEW produits_chers AS 
+SELECT * 
+FROM produits 
+WHERE prix > 2000;
+
+-- Mettre à jour la quantité de la vue Grosses-commandes en ajoutant 200. Vérifier si cette modification s’applique sur la vue et sur la table originale ( Commandes)
+-- ce n'est pas possible de mettre à jour la quantité de la vue Grosses-commandes directement car les vues sont des objets en lecture seule dans la plupart des systèmes de gestion de bases de données.
+--Pour appliquer cette modification, vous pouvez effectuer une requête sur la table originale des Commandes, en sélectionnant les enregistrements pour lesquels la quantité est supérieure à 10, 
+--puis en les mettant à jour en ajoutant 200 à la quantité. Voici un exemple de requête pour cela :
+--UPDATE Commandes
+--SET qute = qute + 200
+--WHERE qute > 10;
+--Après avoir exécuté cette requête, vous pouvez vérifier les modifications en sélectionnant les enregistrements de la table Commandes pour lesquels la quantité est supérieure à 10, ou en sélectionnant les enregistrements de la vue Grosses-Commandes.
+-- Les modifications devraient être visibles dans les deux cas.
+
+
+
+-- Insérer dans la vue grosse_commandes un nouveau porduits   (300 ,"Table",800,35,"noir")
+--L'insertion d'un nouveau produit dans la vue "grosse_commandes" n'est pas possible, car une vue est une vue pouvant être utilisée comme une table, mais qui ne peut pas être modifiée. 
+--Pour ajouter un nouveau produit, on doit ajouter une nouvelle entrée à la table originale "Produits".
+
+
+
+-- Proposer une vue (utilisant les trois tables ) des fournisseurs ayant des produits verts en affichant Numéro et le nom du fournisseur , numéro et le nom du produit  et numéro de la commande , quantité  ) 
+CREATE VIEW fournisseurs_verts AS
+SELECT Fournisseurs.fno, Fournisseurs.nom, Produits.pno, Produits.design, Produits.Couleur, Commandes.cno, Commandes.qute
+FROM Fournisseurs
+JOIN Commandes ON Fournisseurs.fno = Commandes.fno
+JOIN Produits ON Commandes.pno = Produits.pno
+WHERE Produits.couleur = 'vert';
+--La vue fournisseurs_verts permettra d'afficher les informations des fournisseurs qui ont des produits verts, y compris le numéro et le nom du fournisseur, 
+--le numéro et le nom du produit, le numéro de la commande et la quantité.
+
+
+
+-- Mettre à jour la quantité de la vue des produits des fournisseurs ayant des produits verts en ajoutant 10. Vérifier si cette modification s’applique sur la vue et également sur la table originale Commandes 
+UPDATE fournisseurs_verts
+SET qute = qute + 10
+WHERE couleur = 'vert';
+--Pour vérifier si la modification s'applique à la vue:
+SELECT * FROM fournisseurs_verts;
+--Pour vérifier si la modification s'applique à la table originale Commandes:
+SELECT * FROM Commandes;
+
+
+
+-- Proposer  une vue des fournisseurs ayant des produits lourds (>20KG) en affichant Numéro et le nom du fournisseur , numéro et le nom et le poids du produit  et numéro de la commande )
+--La vue peut être créée en utilisant une jointure entre les tables fournisseurs, produits et commandes, avec une condition pour n'afficher que les produits lourds.
+CREATE VIEW fournisseurs_lourds AS
+SELECT F.fno, F.nom, P.pno, P.design, P.poids, C.cno
+FROM Fournisseurs F
+INNER JOIN Commandes C ON C.fno = F.fno
+INNER JOIN Produits P ON P.pno = C.pno
+WHERE P.poids > 20;
+
+
+
+--Mettre à jour les poids de la vue des produits de la vue des fournisseurs ayant des produits lourds en ajoutant 10% .  
+--Vérifier si cette modification s’applique sur la vue  et également sur la table originale (Produits). 
+UPDATE produits_lourds 
+SET poids = poids * 1.1;
+--Pour vérifier si la modification s'applique sur la vue:
+SELECT * 
+FROM produits_lourds;
+-- Et pour vérifier si la modification s'applique également sur la table originale Produits:
+SELECT * 
+FROM Produits;
+
+
+
+-- Insérer dans la vue fournisseurs_lourd une nouvelle ligne    
+INSERT INTO fournisseurs_lourd (NumFournisseur, NomFournisseur, NumProduit, NomProduit, Poids, NumCommande)
+VALUES (100, 'nouvelle', 200, 'ligne', 25, 300);
